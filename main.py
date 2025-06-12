@@ -13,39 +13,43 @@ from handlers.data import (
 )
 from utils import BOT_VERSION
 
-# --- IMPORTANT: PASTE YOUR BOT TOKEN HERE ---
+# --- IMPORTANT: PASTE YOUR REAL BOT TOKEN HERE ---
 BOT_TOKEN = "7769276879:AAE0nH5jYEYnKMyYFVv3n0JCLgqnL2yuNPU"
 
 def main() -> None:
     """Sets up and runs the bot."""
     if not BOT_TOKEN or "YOUR_BOT_TOKEN" in BOT_TOKEN:
-        logging.error("CRITICAL: BOT_TOKEN is not set in main.py.")
+        logging.error("CRITICAL: BOT_TOKEN is not set in main.py. Please get one from @BotFather.")
         return
 
     application = Application.builder().token(BOT_TOKEN).build()
     
-    # Register all handlers
-    application.add_handler(CommandHandler("start", start_command))
-    application.add_handler(CommandHandler("help", help_command))
+    # Register all command and callback handlers
+    handlers = [
+        # Basic handlers
+        CommandHandler("start", start_command),
+        CommandHandler("help", help_command),
 
-    # Network handlers
-    application.add_handler(CommandHandler("lookup", lookup_command))
-    application.add_handler(CommandHandler("nmap", nmap_command))
-    application.add_handler(CommandHandler("rustscan", rustscan_command))
-    application.add_handler(CommandHandler("headers", headers_command))
-    application.add_handler(CommandHandler("methods", methods_command))
-    application.add_handler(CommandHandler("revip", revip_command))
+        # Network handlers from network.py
+        CommandHandler("lookup", lookup_command),
+        CommandHandler("nmap", nmap_command),
+        CommandHandler("rustscan", rustscan_command),
+        CommandHandler("headers", headers_command),
+        CommandHandler("methods", methods_command),
+        CommandHandler("revip", revip_command),
 
-    # Data handlers
-    application.add_handler(CommandHandler("base64", base64_command))
-    application.add_handler(CallbackQueryHandler(base64_button_handler, pattern="^b64_"))
-    application.add_handler(CommandHandler("md5", md5_command))
-    application.add_handler(CommandHandler("urlencode", urlencode_command))
-    application.add_handler(CommandHandler("urldecode", urldecode_command))
-    application.add_handler(CommandHandler("breach", breach_command))
-    application.add_handler(CommandHandler("cms", cms_command))
-    application.add_handler(CommandHandler("analyse", analyse_command))
-    application.add_handler(CommandHandler("extract", extract_command))
+        # Data handlers from data.py
+        CommandHandler("base64", base64_command),
+        CallbackQueryHandler(base64_button_handler, pattern="^b64_"),
+        CommandHandler("md5", md5_command),
+        CommandHandler("urlencode", urlencode_command),
+        CommandHandler("urldecode", urldecode_command),
+        CommandHandler("breach", breach_command),
+        CommandHandler("cms", cms_command),
+        CommandHandler("analyse", analyse_command),
+        CommandHandler("extract", extract_command),
+    ]
+    application.add_handlers(handlers)
     
     logging.info(f"Doraemon Cyber Team Bot v{BOT_VERSION} is starting...")
     application.run_polling()
