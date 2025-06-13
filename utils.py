@@ -66,4 +66,5 @@ def get_bot_branding() -> str:
 `/md5 <text>` \- Generate MD5 hash\.
 `/urlencode <text>` \- URL encode\.
 `/urldecode <text>` \- URL decode\.
+`/subdo <domain>` \- Finds subdomains`
 """
