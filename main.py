@@ -12,7 +12,7 @@ from handlers.data import (
     urldecode_command, breach_command, cms_command, analyse_command, extract_command
 )
 from utils import BOT_VERSION
-
+from handlers.subdomain_finder import subdo_command
 # --- IMPORTANT: PASTE YOUR REAL BOT TOKEN HERE ---
 BOT_TOKEN = "7769276879:AAE0nH5jYEYnKMyYFVv3n0JCLgqnL2yuNPU"
 
@@ -49,6 +49,7 @@ def main() -> None:
         CommandHandler("analyse", analyse_command),
         CommandHandler("extract", extract_command),
     ]
+    application.add_handler(CommandHandler("subdo", subdo_command))
     application.add_handlers(handlers)
     
     logging.info(f"Doraemon Cyber Team Bot v{BOT_VERSION} is starting...")
