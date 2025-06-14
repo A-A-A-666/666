@@ -5,7 +5,7 @@ import shutil  # <<< MISTAKE FIXED: Added missing import
 from telegram import Update
 from telegram.ext import ContextTypes
 from telegram.constants import ParseMode # <<< MISTAKE FIXED: Added missing import
-
+import Web
 BOT_VERSION = "0.667-subdo" # <-- New version number
 
 def escape_markdown_v2(text: str) -> str:
