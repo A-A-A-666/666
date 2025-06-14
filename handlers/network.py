@@ -6,6 +6,7 @@ import requests
 from datetime import datetime
 from telegram import Update
 from telegram.ext import ContextTypes
+from telegram.constants import ParseMode  # <<< MISTAKE FIXED
 from typing import Optional, Tuple, Any, Dict
 from utils import escape_markdown_v2, send_long_message, is_tool_installed
 
@@ -60,7 +61,8 @@ async def nmap_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         result = subprocess.run(command, capture_output=True, text=True, timeout=300)
         output = result.stdout or result.stderr or "Scan completed with no output."
         response_text = f"*Nmap Scan Results for `{escape_markdown_v2(target)}`*\n\n```\n{escape_markdown_v2(output)}\n```"
-        await send_long_message(update, context, response_text)
+        # <<< MISTAKE FIXED: Added parse_mode argument
+        await send_long_message(update, context, response_text, parse_mode=ParseMode.MARKDOWN_V2)
     except subprocess.TimeoutExpired:
         await update.message.reply_text(escape_markdown_v2(f"❌ Scan timed out after 5 minutes for target: {target}"), parse_mode=ParseMode.MARKDOWN_V2)
     except Exception as e:
@@ -85,7 +87,8 @@ async def rustscan_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         # Clean up RustScan's overly verbose output
         cleaned_output = "\n".join([line for line in output.split('\n') if 'Starting Nmap' not in line and 'METADATA' not in line])
         response_text = f"*RustScan Results for `{escape_markdown_v2(target)}`*\n\n```\n{escape_markdown_v2(cleaned_output)}\n```"
-        await send_long_message(update, context, response_text)
+        # <<< MISTAKE FIXED: Added parse_mode argument
+        await send_long_message(update, context, response_text, parse_mode=ParseMode.MARKDOWN_V2)
     except subprocess.TimeoutExpired:
         await update.message.reply_text(escape_markdown_v2(f"❌ Scan timed out after 5 minutes for target: {target}"), parse_mode=ParseMode.MARKDOWN_V2)
     except Exception as e:
@@ -122,7 +125,8 @@ async def lookup_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN, dns.resolver.NoNameservers, dns.exception.Timeout):
             pass
         except Exception: pass
-    await send_long_message(update, context, response_text)
+    # <<< MISTAKE FIXED: Added parse_mode argument
+    await send_long_message(update, context, response_text, parse_mode=ParseMode.MARKDOWN_V2)
 
 async def headers_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not context.args: await update.message.reply_text(escape_markdown_v2("Usage: /headers <domain>"), parse_mode=ParseMode.MARKDOWN_V2); return
