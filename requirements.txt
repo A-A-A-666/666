@@ -2,3 +2,4 @@ python-telegram-bot
 dnspython
 requests
 python-whois
+beautifulsoup4
