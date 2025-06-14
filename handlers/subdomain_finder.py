@@ -6,8 +6,8 @@ from telegram.ext import ContextTypes
 from telegram.constants import ParseMode
 from typing import Optional, Tuple
 
-# Assuming you have a utils.py or helpers.py file for this function
-from utils import escape_markdown_v2
+# <<< MISTAKE FIXED: Import send_long_message for consistent long message handling
+from utils import escape_markdown_v2, send_long_message
 
 logger = logging.getLogger(__name__)
 
@@ -59,17 +59,9 @@ async def subdo_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         await update.message.reply_text(f"⚠️ {escape_markdown_v2(error)}", parse_mode=ParseMode.MARKDOWN_V2)
         return
 
+    # <<< MISTAKE FIXED: Use the send_long_message helper for consistency
     if subdomains:
         header = f"🧾 *Found {len(subdomains)} subdomains for `{escaped_domain}`:*\n"
         result_text = "\n".join(subdomains)
         full_message = f"{header}```\n{result_text}\n```"
-
-        # Handle Telegram's message length limit
-        if len(full_message) > 4096:
-            await update.message.reply_text(header, parse_mode=ParseMode.MARKDOWN_V2)
-            # Split the text part and send in chunks
-            for i in range(0, len(result_text), 4000): # Use 4000 to be safe
-                chunk = result_text[i:i+4000]
-                await update.message.reply_text(f"```\n{chunk}\n```", parse_mode=ParseMode.MARKDOWN_V2)
-        else:
-            await update.message.reply_text(full_message, parse_mode=ParseMode.MARKDOWN_V2)
+        await send_long_message(update, context, full_message, parse_mode=ParseMode.MARKDOWN_V2)
