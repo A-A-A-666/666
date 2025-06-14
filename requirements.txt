@@ -3,3 +3,4 @@ dnspython
 requests
 python-whois
 beautifulsoup4
+flask
