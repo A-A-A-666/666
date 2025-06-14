@@ -2,7 +2,10 @@ import logging
 import os
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler
 
-# Import handlers from our modules
+# Import the Web module which will run the application
+import Web 
+
+# Import all command handlers
 from handlers.basic import start_command, help_command
 from handlers.network import (
     lookup_command, nmap_command, rustscan_command, headers_command,
@@ -13,19 +16,21 @@ from handlers.data import (
     urldecode_command, breach_command, cms_command, analyse_command, extract_command
 )
 from handlers.subdomain_finder import subdo_command
-from utils import BOT_VERSION, get_bot_branding # get_bot_branding is used by handlers
+from utils import BOT_VERSION
 
-# The bot token is fetched from the environment variables for security.
-# The value from the prompt is used as a fallback for local testing.
+# --- Configuration ---
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "7769276879:AAE0nH5jYEYnKMyYFVv3n0JCLgqnL2yuNPU")
 
 def main() -> None:
-    """Sets up and runs the Telegram bot."""
+    """
+    Configures the bot application and its handlers, then passes control
+    to the web server for execution.
+    """
     if not BOT_TOKEN or "YOUR_BOT_TOKEN" in BOT_TOKEN:
-        logging.error("CRITICAL: BOT_TOKEN is not set. Please set it as an environment variable or directly in main.py.")
+        logging.error("CRITICAL: BOT_TOKEN is not set. The bot cannot start.")
         return
 
-    # Use a persistent context that holds user_data across restarts (if persistence is configured)
+    # Create the Application instance
     application = Application.builder().token(BOT_TOKEN).build()
 
     # A single list of all handlers for cleaner registration
@@ -55,12 +60,14 @@ def main() -> None:
         CommandHandler("urldecode", urldecode_command),
     ]
 
+    # Register all handlers with the application
     application.add_handlers(all_handlers)
+    
+    logging.info(f"Doraemon Cyber Team Bot v{BOT_VERSION} configured. Handing off to web server...")
 
-    logging.info(f"Doraemon Cyber Team Bot v{BOT_VERSION} is starting...")
-    application.run_polling()
-    logging.info("Doraemon Cyber Team Bot has stopped.")
-
+    # Pass the fully configured application object to the web server to run.
+    # This call will start the web server and block until it stops.
+    Web.start(application)
 
 if __name__ == "__main__":
     # Configure logging
@@ -68,4 +75,5 @@ if __name__ == "__main__":
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         level=logging.INFO
     )
+    # Run the main configuration and startup function
     main()
