@@ -90,4 +90,4 @@ def get_bot_branding():
     
     return full_text
 if __name__ == "__main__":
-    web.start()
+    Web.start()
