@@ -99,7 +99,7 @@ async def breach_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         await update.message.reply_text(escape_markdown_v2("Usage: /breach <email>"), parse_mode=ParseMode.MARKDOWN_V2)
         return
     email, escaped_email = context.args[0], escape_markdown_v2(context.args[0])
-    await update.message.reply_text(f"🔐 Checking `{escaped_email}` for breaches...", parse_mode=ParseMode.MARKDOWN_V2)
+    await update.message.reply_text(f"🔐 Checking `{escaped_email}` for breaches{escape_markdown_v2('...')}", parse_mode=ParseMode.MARKDOWN_V2)
     api_result, error_msg = _make_api_request(BREACH_API_URL, {'email': email})
     
     if error_msg:
@@ -128,7 +128,6 @@ async def breach_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             response_message += f"\n*{name}*\n  *Domain:* `{domain}`\n  *Date:* `{date}`\n  *Accounts:* `{escape_markdown_v2(f'{pwn_count:,}')}`\n  *Data:* {data_classes_str}\n  *Description:* {description}\n"
     
     if pastes:
-        # ### FIX APPLIED HERE ###
         response_message += f"\n*Found {len(pastes)} Paste(s){escape_markdown_v2('.')}*\n"
         
     await update.message.reply_text(response_message, parse_mode=ParseMode.MARKDOWN_V2, disable_web_page_preview=True)
@@ -138,7 +137,8 @@ async def cms_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         await update.message.reply_text(escape_markdown_v2("Usage: /cms <url>"), parse_mode=ParseMode.MARKDOWN_V2)
         return
     url, escaped_url = context.args[0], escape_markdown_v2(context.args[0])
-    await update.message.reply_text(f"🔍 Scanning `{escaped_url}` for CMS info...", parse_mode=ParseMode.MARKDOWN_V2)
+    # ### FIX APPLIED HERE ###
+    await update.message.reply_text(f"🔍 Scanning `{escaped_url}` for CMS info{escape_markdown_v2('...')}", parse_mode=ParseMode.MARKDOWN_V2)
     api_result, error_msg = _make_api_request(CMS_API_URL, {'url': url})
     if error_msg:
         await update.message.reply_text(f"❌ Error: {escape_markdown_v2(error_msg)}", parse_mode=ParseMode.MARKDOWN_V2)
@@ -154,7 +154,7 @@ async def analyse_command(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         await update.message.reply_text(escape_markdown_v2("Usage: /analyse <url>"), parse_mode=ParseMode.MARKDOWN_V2)
         return
     url, escaped_url = context.args[0], escape_markdown_v2(context.args[0])
-    await update.message.reply_text(f"🔬 Analysing `{escaped_url}`...", parse_mode=ParseMode.MARKDOWN_V2)
+    await update.message.reply_text(f"🔬 Analysing `{escaped_url}`{escape_markdown_v2('...')}", parse_mode=ParseMode.MARKDOWN_V2)
     api_result, error_msg = _make_api_request(ANALYSE_API_URL, {'url': url})
     if error_msg:
         await update.message.reply_text(f"❌ Analysis Error: {escape_markdown_v2(error_msg)}", parse_mode=ParseMode.MARKDOWN_V2)
@@ -181,7 +181,7 @@ async def extract_command(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         await update.message.reply_text(escape_markdown_v2("Usage: /extract <url>"), parse_mode=ParseMode.MARKDOWN_V2)
         return
     url, escaped_url = context.args[0], escape_markdown_v2(context.args[0])
-    await update.message.reply_text(f"📭 Extracting emails from `{escaped_url}`...", parse_mode=ParseMode.MARKDOWN_V2)
+    await update.message.reply_text(f"📭 Extracting emails from `{escaped_url}`{escape_markdown_v2('...')}", parse_mode=ParseMode.MARKDOWN_V2)
     api_result, error_msg = _make_api_request(EXTRACT_EMAIL_API_URL, {'url': url})
     if error_msg:
         await update.message.reply_text(f"❌ Extraction Error: {escape_markdown_v2(error_msg)}", parse_mode=ParseMode.MARKDOWN_V2)
