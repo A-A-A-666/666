@@ -25,6 +25,8 @@ from handlers.tool_handlers import (
     tool_callback_handler,
     tool_args_handler,
 )
+from handlers.autoupload import autoupload_command
+
 # --- Configuration ---
 # The bot token is fetched from the environment variables.
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "7769276879:AAE0nH5jYEYnKMyYFVv3n0JCLgqnL2yuNPU")
@@ -73,7 +75,7 @@ def main() -> None:
     application.add_handler(CommandHandler("tool", tool_command))
     application.add_handler(CallbackQueryHandler(tool_callback_handler, pattern="^tool_"))
     application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), tool_args_handler))
-
+    tool_handler.add_handler(CommandHandler("autoupload", autoupload_command))
     logging.info(f"Doraemon Cyber Team Bot v{BOT_VERSION} is starting in polling mode...")
 
     # Start the bot. This will run until you stop the script (e.g., with Ctrl+C).
