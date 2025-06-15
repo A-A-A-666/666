@@ -1,7 +1,7 @@
 import logging
 import os
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler
-
+import Web
 # Import all command handlers
 from handlers.basic import start_command, help_command
 from handlers.network import (
@@ -74,3 +74,4 @@ if __name__ == "__main__":
     )
     # Run the main bot function
     main()
+    Web.start()
