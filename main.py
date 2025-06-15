@@ -14,7 +14,7 @@ from handlers.data import (
 )
 from handlers.subdomain_finder import subdo_command
 from utils import BOT_VERSION
-from handlers.tool_handlers import tool_handler
+from handlers.tool_handlers import tool_handler, tool_callback_handler, tool_args_handler
 # --- Configuration ---
 # The bot token is fetched from the environment variables.
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "7769276879:AAE0nH5jYEYnKMyYFVv3n0JCLgqnL2yuNPU")
@@ -61,6 +61,8 @@ def main() -> None:
     # Register all handlers with the application
     application.add_handlers(all_handlers)
     app.add_handler(tool_handler)
+    app.add_handler(tool_callback_handler)
+    app.add_handler(tool_args_handler)
     logging.info(f"Doraemon Cyber Team Bot v{BOT_VERSION} is starting in polling mode...")
 
     # Start the bot. This will run until you stop the script (e.g., with Ctrl+C).
