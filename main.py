@@ -60,9 +60,9 @@ def main() -> None:
 
     # Register all handlers with the application
     application.add_handlers(all_handlers)
-    app.add_handler(tool_handler)
-    app.add_handler(tool_callback_handler)
-    app.add_handler(tool_args_handler)
+    application.add_handler(tool_handler)
+    application.add_handler(tool_callback_handler)
+    application.add_handler(tool_args_handler)
     logging.info(f"Doraemon Cyber Team Bot v{BOT_VERSION} is starting in polling mode...")
 
     # Start the bot. This will run until you stop the script (e.g., with Ctrl+C).
