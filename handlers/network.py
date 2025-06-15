@@ -1,3 +1,5 @@
+# handlers/network.py
+
 import whois
 import dns.resolver
 import subprocess
@@ -12,27 +14,25 @@ from utils import escape_markdown_v2, send_long_message, is_tool_installed
 
 # --- Config ---
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-# <<< MISTAKE FIXED: Switched to a more reliable, standard API for reverse IP lookups
 REV_IP_API_URL = "https://api.hackertarget.com/reverseiplookup/"
 
 # --- Internal Helper for /headers ---
 def _get_header_data(domain: str) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
     """Gathers DNS and HTTP header info for a domain."""
     try:
-        # Resolve DNS first to fail fast if the domain doesn't exist
         ipv4 = [ip.to_text() for ip in dns.resolver.resolve(domain, 'A')]
         ipv6: List[str] = []
         try:
             ipv6 = [ip.to_text() for ip in dns.resolver.resolve(domain, 'AAAA')]
         except (dns.resolver.NoAnswer, dns.resolver.NoNameservers):
-            pass  # It's okay if there's no AAAA record
+            pass
 
         headers: Dict[str, str] = {}
         final_url = f"https://{domain}"
         try:
             response = requests.get(final_url, timeout=10, headers={'User-Agent': USER_AGENT}, allow_redirects=True)
             headers = response.headers
-            final_url = response.url # Get the final URL after redirects
+            final_url = response.url
         except requests.RequestException:
             try:
                 final_url = f"http://{domain}"
@@ -40,7 +40,7 @@ def _get_header_data(domain: str) -> Tuple[Optional[Dict[str, Any]], Optional[st
                 headers = response.headers
                 final_url = response.url
             except requests.RequestException:
-                pass # Headers may not be retrievable, but DNS info is still valuable
+                pass
 
         return {"domain": domain, "final_url": final_url, "ipv4": ipv4, "ipv6": ipv6, "headers": dict(headers)}, None
     except (dns.resolver.NXDOMAIN, dns.resolver.NoNameservers, dns.resolver.Timeout) as e:
@@ -69,8 +69,8 @@ async def nmap_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         await update.message.reply_text(escape_markdown_v2(f"⚠️ Disallowed flag detected. Allowed: {', '.join(allowed_flags)}"), parse_mode=ParseMode.MARKDOWN_V2)
         return
     
-    # <<< UX IMPROVEMENT: Send an initial message and edit it later
-    sent_message = await update.message.reply_text(f"Starting Nmap scan on `{escape_markdown_v2(target)}`\.\.\. This can take up to 5 minutes.", parse_mode=ParseMode.MARKDOWN_V2)
+    # The '...' are now handled by the escape_markdown_v2 function
+    sent_message = await update.message.reply_text(f"Starting Nmap scan on `{escape_markdown_v2(target)}`{escape_markdown_v2('...')} This can take up to 5 minutes.", parse_mode=ParseMode.MARKDOWN_V2)
     
     command = ['nmap'] + user_flags + [target]
     response_text = ""
@@ -78,7 +78,7 @@ async def nmap_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         result = subprocess.run(command, capture_output=True, text=True, timeout=300)
         output = result.stdout or result.stderr or "Scan completed with no output."
         response_text = f"*Nmap Scan Results for `{escape_markdown_v2(target)}`*\n\n```\n{escape_markdown_v2(output)}\n```"
-        await sent_message.delete() # Delete "working..." message
+        await sent_message.delete()
         await send_long_message(update, context, response_text, parse_mode=ParseMode.MARKDOWN_V2)
     except subprocess.TimeoutExpired:
         response_text = escape_markdown_v2(f"❌ Scan timed out after 5 minutes for target: {target}")
@@ -88,7 +88,6 @@ async def nmap_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         await sent_message.edit_text(response_text, parse_mode=ParseMode.MARKDOWN_V2)
 
 async def rustscan_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    # This function follows the same improved pattern as nmap_command
     if not is_tool_installed('rustscan'):
         await update.message.reply_text("⚠️ RustScan is not installed on the server.", parse_mode=ParseMode.MARKDOWN_V2)
         return
@@ -101,7 +100,7 @@ async def rustscan_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         await update.message.reply_text("⚠️ Invalid target format.", parse_mode=ParseMode.MARKDOWN_V2)
         return
         
-    sent_message = await update.message.reply_text(f"Starting RustScan on `{escape_markdown_v2(target)}`\.\.\. This can take a moment.", parse_mode=ParseMode.MARKDOWN_V2)
+    sent_message = await update.message.reply_text(f"Starting RustScan on `{escape_markdown_v2(target)}`{escape_markdown_v2('...')} This can take a moment.", parse_mode=ParseMode.MARKDOWN_V2)
     
     command = ['rustscan', '-a', target, '--ulimit', '5000', '--', '-sV']
     try:
@@ -123,17 +122,14 @@ async def lookup_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     
     domain = context.args[0].lower().strip().replace("http://", "").replace("https://", "")
     escaped_domain = escape_markdown_v2(domain)
-    sent_message = await update.message.reply_text(f"🕵️ Digging deep into `{escaped_domain}`\.\.\.", parse_mode=ParseMode.MARKDOWN_V2)
+    sent_message = await update.message.reply_text(f"🕵️ Digging deep into `{escaped_domain}`{escape_markdown_v2('...')}", parse_mode=ParseMode.MARKDOWN_V2)
     
-    # <<< UX & VALUE IMPROVEMENT: Cleaner, more structured WHOIS and DNS output
     response_text = f"🔎 *Lookup Report for `{escaped_domain}`*\n" + escape_markdown_v2("----------------------------------------\n\n")
     
-    # WHOIS Lookup
     try:
         w = whois.whois(domain)
         response_text += "*WHOIS Information:*\n"
         if w.domain_name:
-            # Extract only the most useful fields
             whois_details = {
                 'Domain': w.domain_name, 'Registrar': w.registrar,
                 'Creation Date': w.creation_date, 'Expiration Date': w.expiration_date,
@@ -141,7 +137,6 @@ async def lookup_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             }
             for key, value in whois_details.items():
                 if not value: continue
-                # Format values nicely
                 if isinstance(value, list):
                     value_str = ", ".join(sorted([str(v) for v in value]))
                 elif isinstance(value, datetime):
@@ -154,7 +149,6 @@ async def lookup_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     except Exception as e:
         response_text += f"*WHOIS Information:*\n  `Error: {escape_markdown_v2(str(e))}`\n"
     
-    # DNS Lookup
     response_text += "\n*DNS Records:*\n"
     has_dns_records = False
     for r_type in ['A', 'AAAA', 'MX', 'NS', 'TXT', 'SOA', 'CNAME']:
@@ -190,7 +184,6 @@ async def headers_command(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         if data.get('ipv4'): response_text += f"\n*IPv4:* `{', '.join(data['ipv4'])}`"
         if data.get('ipv6'): response_text += f"\n*IPv6:* `{', '.join(data['ipv6'])}`"
         
-        # <<< VALUE IMPROVEMENT: Added Security Header Analysis
         if data.get('headers'):
             headers_lower = {k.lower(): v for k, v in data['headers'].items()}
             security_headers = {
