@@ -1,3 +1,5 @@
+# handlers/data.py
+
 import base64
 import hashlib
 import urllib.parse
@@ -125,9 +127,9 @@ async def breach_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             data_classes_str = ", ".join([f"`{dc}`" for dc in breach.get("DataClasses", [])]) or "`N/A`"
             response_message += f"\n*{name}*\n  *Domain:* `{domain}`\n  *Date:* `{date}`\n  *Accounts:* `{escape_markdown_v2(f'{pwn_count:,}')}`\n  *Data:* {data_classes_str}\n  *Description:* {description}\n"
     
-    # Placeholder for paste data if the API provides it in the future
     if pastes:
-        response_message += f"\n*Found {len(pastes)} Paste(s)\.*\n"
+        # ### FIX APPLIED HERE ###
+        response_message += f"\n*Found {len(pastes)} Paste(s){escape_markdown_v2('.')}*\n"
         
     await update.message.reply_text(response_message, parse_mode=ParseMode.MARKDOWN_V2, disable_web_page_preview=True)
 
