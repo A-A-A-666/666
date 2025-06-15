@@ -2,9 +2,6 @@ import logging
 import os
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler
 
-# Import the Web module which will run the application
-import Web 
-
 # Import all command handlers
 from handlers.basic import start_command, help_command
 from handlers.network import (
@@ -19,12 +16,13 @@ from handlers.subdomain_finder import subdo_command
 from utils import BOT_VERSION
 
 # --- Configuration ---
+# The bot token is fetched from the environment variables.
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "7769276879:AAE0nH5jYEYnKMyYFVv3n0JCLgqnL2yuNPU")
 
 def main() -> None:
     """
-    Configures the bot application and its handlers, then passes control
-    to the web server for execution.
+    This function sets up and runs the bot using polling.
+    It is completely independent of any web server.
     """
     if not BOT_TOKEN or "YOUR_BOT_TOKEN" in BOT_TOKEN:
         logging.error("CRITICAL: BOT_TOKEN is not set. The bot cannot start.")
@@ -63,11 +61,10 @@ def main() -> None:
     # Register all handlers with the application
     application.add_handlers(all_handlers)
     
-    logging.info(f"Doraemon Cyber Team Bot v{BOT_VERSION} configured. Handing off to web server...")
+    logging.info(f"Doraemon Cyber Team Bot v{BOT_VERSION} is starting in polling mode...")
 
-    # Pass the fully configured application object to the web server to run.
-    # This call will start the web server and block until it stops.
-    Web.start(application)
+    # Start the bot. This will run until you stop the script (e.g., with Ctrl+C).
+    application.run_polling()
 
 if __name__ == "__main__":
     # Configure logging
@@ -75,5 +72,5 @@ if __name__ == "__main__":
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         level=logging.INFO
     )
-    # Run the main configuration and startup function
+    # Run the main bot function
     main()
