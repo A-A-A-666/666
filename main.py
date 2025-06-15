@@ -1,6 +1,12 @@
 import logging
 import os
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler
+from telegram.ext import (
+    Application,
+    CommandHandler,
+    CallbackQueryHandler,
+    MessageHandler,
+    filters,
+)
 import Web
 # Import all command handlers
 from handlers.basic import start_command, help_command
