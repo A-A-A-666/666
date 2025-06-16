@@ -60,12 +60,7 @@ def get_bot_branding() -> str:
     net_header = "*Network & Web Tools:*"
     net_tools = [
         "`/subdo <domain>` \\- Finds subdomains for a domain\\.",
-        "`/lookup <domain>` \\- All\\-in\\-one WHOIS & DNS lookup\\.",
-        "`/headers <domain>` \\- Gets IP and HTTP headers\\.",
-        "`/methods <url>` \\- Finds allowed HTTP methods\\.",
-        "`/revip <ip>` \\- Performs a reverse IP lookup\\.",
-        "`/analyse <url>` \\- Analyses website technologies\\.",
-        "`/extract <url>` \\- Extracts emails from a webpage\\.",
+        "`/lookup <domain>` \\- All\\-in\\-one WHOIS & DNS lookup\\."
         "`/cms <url>` \\- Scans a website's CMS\\."
     ]
     

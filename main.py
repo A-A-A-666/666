@@ -8,6 +8,7 @@ from telegram.ext import (
     filters,
 )
 import Web
+
 # Import all command handlers
 from handlers.basic import start_command, help_command
 from handlers.network import (
@@ -27,14 +28,17 @@ from handlers.tool_handlers import (
 )
 from handlers.autoupload import autoupload_command
 
+# Import new security handlers
+from handlers.scan_handler import scan_command
+from handlers.crawl_handler import crawl_command
+
 # --- Configuration ---
-# The bot token is fetched from the environment variables.
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "7769276879:AAE0nH5jYEYnKMyYFVv3n0JCLgqnL2yuNPU")
 
 def main() -> None:
     """
     This function sets up and runs the bot using polling.
-    It is completely independent of any web server.
+    Now with added security scanning capabilities.
     """
     if not BOT_TOKEN or "YOUR_BOT_TOKEN" in BOT_TOKEN:
         logging.error("CRITICAL: BOT_TOKEN is not set. The bot cannot start.")
@@ -43,7 +47,7 @@ def main() -> None:
     # Create the Application instance
     application = Application.builder().token(BOT_TOKEN).build()
 
-    # A single list of all handlers for cleaner registration
+    # Consolidated list of all handlers
     all_handlers = [
         # Basic handlers
         CommandHandler("start", start_command),
@@ -68,17 +72,24 @@ def main() -> None:
         CommandHandler("md5", md5_command),
         CommandHandler("urlencode", urlencode_command),
         CommandHandler("urldecode", urldecode_command),
+
+        # New security scanning handlers
+        CommandHandler("scan", scan_command),
+        CommandHandler("crawl", crawl_command),
     ]
 
     # Register all handlers with the application
     application.add_handlers(all_handlers)
+    
+    # Special handlers that need separate registration
     application.add_handler(CommandHandler("tool", tool_command))
     application.add_handler(CallbackQueryHandler(tool_callback_handler, pattern="^tool_"))
     application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), tool_args_handler))
-    tool_handler.add_handler(CommandHandler("autoupload", autoupload_command))
-    logging.info(f"Doraemon Cyber Team Bot v{BOT_VERSION} is starting in polling mode...")
+    application.add_handler(CommandHandler("autoupload", autoupload_command))
+    
+    logging.info(f"Doraemon Cyber Team Bot v{BOT_VERSION} is starting with security scanning features...")
 
-    # Start the bot. This will run until you stop the script (e.g., with Ctrl+C).
+    # Start the bot
     application.run_polling()
 
 if __name__ == "__main__":
@@ -87,6 +98,7 @@ if __name__ == "__main__":
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         level=logging.INFO
     )
+    
     # Run the main bot function
     main()
     Web.start()

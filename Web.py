@@ -12,7 +12,7 @@ def status():
 def start():
     """This function starts the simple web server."""
     # Get the port from the environment, defaulting to 5000 for local testing
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 8000))
     # Run the Flask app
     app.run(host="0.0.0.0", port=port)
 
