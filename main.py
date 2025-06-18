@@ -33,7 +33,7 @@ from handlers.scan_handler import scan_command
 from handlers.crawl_handler import crawl_command
 
 # --- Configuration ---
-BOT_TOKEN = os.environ.get("BOT_TOKEN", "7769276879:AAE0nH5jYEYnKMyYFVv3n0JCLgqnL2yuNPU")
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
 
 def main() -> None:
     """
