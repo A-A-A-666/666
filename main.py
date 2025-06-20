@@ -155,5 +155,6 @@ def main() -> None:
 if __name__ == "__main__":
     # This Web.start() call will only run if main() exits, which it won't in polling mode.
     # Consider removing or refactoring for a proper web/webhook deployment.
-    Web.start() # Commenting out as it won't be reached in polling mode
+    #Web.start() # Commenting out as it won't be reached in polling mode
     main()
+    Web.start()
