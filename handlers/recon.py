@@ -8,6 +8,7 @@ import re
 import tempfile
 import json
 import asyncio
+from typing import Optional # <-- ADDED THIS LINE
 
 # No instagrapi import here
 
@@ -31,19 +32,21 @@ async def check_and_install_tool(tool_name: str, update: Update, context: Contex
         return True
 
     # 2. If not found, run the installation script
-    await update.message.reply_text(f"â³ Tool '{escape_markdown_v2(tool_name)}' not found. Attempting installation...", parse_mode=ParseMode.MARKDOWN_V2)
+    await update.message.reply_text(f"⏳ Tool '{escape_markdown_v2(tool_name)}' not found. Attempting installation...", parse_mode=ParseMode.MARKDOWN_V2)
 
     # Determine the path to the installation script (assuming it's in the directory above handlers)
     script_dir = os.path.dirname(__file__)
+    # This assumes handlers/ is directly inside the directory containing install_tool.sh
+    # If not, adjust the '..' part accordingly. For '666-main/handlers' and '666-main/install_tool.sh', '..' is correct.
     install_script_path = os.path.join(script_dir, '..', 'install_tool.sh')
 
     # Make sure the script exists and is executable
     if not os.path.exists(install_script_path):
-        await update.message.reply_text(f"âŒ Installation script not found at: `{escape_markdown_v2(install_script_path)}`.", parse_mode=ParseMode.MARKDOWN_V2)
+        await update.message.reply_text(f"❌ Installation script not found at: `{escape_markdown_v2(install_script_path)}`.", parse_mode=ParseMode.MARKDOWN_V2)
         logger.error(f"Installation script not found at {install_script_path}")
         return False
     if not os.access(install_script_path, os.X_OK):
-         await update.message.reply_text(f"âŒ Installation script at `{escape_markdown_v2(install_script_path)}` is not executable. Please run `chmod +x {escape_markdown_v2(install_script_path)}` on the server.", parse_mode=ParseMode.MARKDOWN_V2)
+         await update.message.reply_text(f"❌ Installation script at `{escape_markdown_v2(install_script_path)}` is not executable. Please run `chmod +x {escape_markdown_v2(install_script_path)}` on the server.", parse_mode=ParseMode.MARKDOWN_V2)
          logger.error(f"Installation script not executable at {install_script_path}")
          return False
 
@@ -61,24 +64,33 @@ async def check_and_install_tool(tool_name: str, update: Update, context: Contex
         output = (stdout + stderr).decode('utf-8', errors='ignore')
 
         if process.returncode == 0:
-            await update.message.reply_text(f"âœ… Tool '{escape_markdown_v2(tool_name)}' installed successfully.", parse_mode=ParseMode.MARKDOWN_V2)
-            # Final verification after script reports success
-            return shutil.which(tool_name) is not None
+            # Check again after the script reports success - crucial step
+            if shutil.which(tool_name):
+                 await update.message.reply_text(f"✅ Tool '{escape_markdown_v2(tool_name)}' installed successfully.", parse_mode=ParseMode.MARKDOWN_V2)
+                 return True # Success confirmed
+            else:
+                 # Script reported success but tool still not found
+                 await update.message.reply_text(
+                     f"⚠️ Installation script for '{escape_markdown_v2(tool_name)}' finished, but the tool was still not found in PATH. Script output:\n```\n{escape_markdown_v2(output[:1000])}...\n```",
+                     parse_mode=ParseMode.MARKDOWN_V2
+                 )
+                 logger.error(f"Installation script for {tool_name} reported success but tool not found: {output}")
+                 return False # Installation failed to make tool available
         else:
             # Installation script failed
             error_output = output # The script output includes both success and error messages
             await update.message.reply_text(
-                f"âŒ Failed to install '{escape_markdown_v2(tool_name)}'. Installation script output:\n```\n{escape_markdown_v2(error_output[:1000])}...\n```", # Truncate output
+                f"❌ Failed to install '{escape_markdown_v2(tool_name)}'. Installation script output:\n```\n{escape_markdown_v2(error_output[:1000])}...\n```", # Truncate output
                 parse_mode=ParseMode.MARKDOWN_V2
             )
             logger.error(f"Installation script failed for {tool_name} (exit code {process.returncode}): {error_output}")
             return False
     except asyncio.TimeoutError:
-        await update.message.reply_text(f"âŒ Installation script for '{escape_markdown_v2(tool_name)}' timed out.", parse_mode=ParseMode.MARKDOWN_V2)
+        await update.message.reply_text(f"❌ Installation script for '{escape_markdown_v2(tool_name)}' timed out.", parse_mode=ParseMode.MARKDOWN_V2)
         logger.warning(f"Installation script timed out after 600s for {tool_name}")
         return False
     except Exception as e:
-        await update.message.reply_text(f"âŒ An unexpected error occurred while running the installation script for '{escape_markdown_v2(tool_name)}': {escape_markdown_v2(str(e))}", parse_mode=ParseMode.MARKDOWN_V2)
+        await update.message.reply_text(f"❌ An unexpected error occurred while running the installation script for '{escape_markdown_v2(tool_name)}': {escape_markdown_v2(str(e))}", parse_mode=ParseMode.MARKDOWN_V2)
         logger.error(f"Exception running installation script for {tool_name}: {e}", exc_info=True)
         return False
 
@@ -104,7 +116,7 @@ async def run_subprocess_command(command: list[str], update: Update, context: Co
              # Escape output before including in MarkdownV2
              escaped_output = escape_markdown_v2(output[:1000])
              await update.message.reply_text(
-                 f"âŒ The {escape_markdown_v2(description)} failed (exit code {process.returncode}). Output:\n```\n{escaped_output}...\n```",
+                 f"❌ The {escape_markdown_v2(description)} failed (exit code {process.returncode}). Output:\n```\n{escaped_output}...\n```",
                  parse_mode=ParseMode.MARKDOWN_V2
              )
              return None
@@ -112,18 +124,21 @@ async def run_subprocess_command(command: list[str], update: Update, context: Co
         return output
 
     except FileNotFoundError:
+        # Note: check_and_install_tool should ideally catch this before we try to run the command,
+        # but this is a fallback error message in case it's somehow missed or the tool
+        # disappeared from PATH between check and run.
         await update.message.reply_text(
-            f"âŒ Error: The executable for this {escape_markdown_v2(description)} was not found. Attempting installation might be needed.",
+            f"❌ Error: The executable for this {escape_markdown_v2(description)} was not found in PATH.",
             parse_mode=ParseMode.MARKDOWN_V2
         )
         logger.error(f"Executable not found for command: {' '.join(command)}")
         return None
     except asyncio.TimeoutError:
-        await update.message.reply_text(f"â³ The {escape_markdown_v2(description)} timed out after {timeout} seconds.", parse_mode=ParseMode.MARKDOWN_V2)
+        await update.message.reply_text(f"⏳ The {escape_markdown_v2(description)} timed out after {timeout} seconds.", parse_mode=ParseMode.MARKDOWN_V2)
         logger.warning(f"Command timed out after {timeout}s: {' '.join(command)}")
         return None
     except Exception as e:
-        await update.message.reply_text(f"âŒ An unexpected error occurred during the {escape_markdown_v2(description)}: {escape_markdown_v2(str(e))}", parse_mode=ParseMode.MARKDOWN_V2)
+        await update.message.reply_text(f"❌ An unexpected error occurred during the {escape_markdown_v2(description)}: {escape_markdown_v2(str(e))}", parse_mode=ParseMode.MARKDOWN_V2)
         logger.error(f"Exception running command {' '.join(command)}: {e}", exc_info=True)
         return None
 
@@ -146,15 +161,15 @@ async def dirbuster_command(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 
     # Check/Install gobuster using the script
     if not await check_and_install_tool('gobuster', update, context):
-        await update.message.reply_text("âŒ Gobuster is required and could not be ensured installed. Cannot run command.", parse_mode=ParseMode.MARKDOWN_V2)
+        await update.message.reply_text("❌ Gobuster is required and could not be ensured installed. Cannot run command.", parse_mode=ParseMode.MARKDOWN_V2)
         return
 
     # Check if wordlist exists (especially for custom ones)
     if not os.path.exists(wordlist_path):
-         await update.message.reply_text(f"âŒ Wordlist not found at `{escaped_wordlist}`.", parse_mode=ParseMode.MARKDOWN_V2)
+         await update.message.reply_text(f"❌ Wordlist not found at `{escaped_wordlist}`.", parse_mode=ParseMode.MARKDOWN_V2)
          return
 
-    await update.message.reply_text(f"ðŸš€ Starting directory scan on `{escaped_url}` using wordlist `{escaped_wordlist}`{escape_markdown_v2('...')} This may take some time.", parse_mode=ParseMode.MARKDOWN_V2)
+    await update.message.reply_text(f"🚀 Starting directory scan on `{escaped_url}` using wordlist `{escaped_wordlist}`{escape_markdown_v2('...')} This may take some time.", parse_mode=ParseMode.MARKDOWN_V2)
 
     # Command: gobuster dir -u <url> -w <wordlist> -t 50 (threads) -f (add trailing slash)
     command = ['gobuster', 'dir', '-u', target_url, '-w', wordlist_path, '-t', '50', '-f']
@@ -169,10 +184,10 @@ async def dirbuster_command(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         ])
 
         if results.strip():
-            response_text = f"âœ… Directory scan complete for `{escaped_url}`:\n```\n{results}\n```"
+            response_text = f"✅ Directory scan complete for `{escaped_url}`:\n```\n{results}\n```"
             await send_long_message(update, context, response_text, parse_mode=ParseMode.MARKDOWN_V2)
         else:
-            await update.message.reply_text(f"âœ… Directory scan complete for `{escaped_url}`, no results found.", parse_mode=ParseMode.MARKDOWN_V2)
+            await update.message.reply_text(f"✅ Directory scan complete for `{escaped_url}`, no results found.", parse_mode=ParseMode.MARKDOWN_V2)
 
 
 # --- Instagram Handlers (REMOVED) ---
@@ -189,11 +204,12 @@ async def search_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     escaped_target_username = escape_markdown_v2(target_username)
 
     # Check/Install sherlock using the script
+    # Note: sherlock is primarily a pip package, the script should handle this.
     if not await check_and_install_tool('sherlock', update, context):
-        await update.message.reply_text("âŒ Sherlock is required and could not be ensured installed. Cannot run command.", parse_mode=ParseMode.MARKDOWN_V2)
+        await update.message.reply_text("❌ Sherlock is required and could not be ensured installed. Cannot run command.", parse_mode=ParseMode.MARKDOWN_V2)
         return
 
-    await update.message.reply_text(f"ðŸ”Ž Searching for username `{escaped_target_username}` across social media platforms{escape_markdown_v2('...')} This can take some time.", parse_mode=ParseMode.MARKDOWN_V2)
+    await update.message.reply_text(f"🔎 Searching for username `{escaped_target_username}` across social media platforms{escape_markdown_v2('...')} This can take some time.", parse_mode=ParseMode.MARKDOWN_V2)
 
     # Command: sherlock <username> --timeout 10 (seconds per site) --print-found
     # Set a global timeout for the command itself, e.g., 10 minutes, as it can hit many sites.
@@ -222,24 +238,24 @@ async def search_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                     # Basic URL validation before formatting as link
                     if site_url.startswith('http://') or site_url.startswith('https://'):
                         # Escape site_name for Markdown link text
-                        found_results.append(f"âœ… [{escape_markdown_v2(site_name)}]({site_url})")
+                        found_results.append(f"✅ [{escape_markdown_v2(site_name)}]({site_url})")
                     else:
-                         found_results.append(f"âœ… {escape_markdown_v2(site_name)}: `{escape_markdown_v2(site_url)}`")
+                         found_results.append(f"✅ {escape_markdown_v2(site_name)}: `{escape_markdown_v2(site_url)}`")
 
             elif line.startswith('[-]'):
                  not_found_count += 1
             # Ignore other lines (e.g., --timeout, --print-found messages)
 
-        response_text = f"ðŸŒ *Social Media Scan Results for `{escaped_target_username}`:*\n\n"
+        response_text = f"🌐 *Social Media Scan Results for `{escaped_target_username}`:*\n\n"
 
         if found_results:
             response_text += "*Found Accounts:*\n" + "\n".join(found_results)
             if not_found_count > 0:
                  response_text += f"\n\n*Not Found on {not_found_count} other sites checked.*"
         elif not_found_count > 0:
-            response_text += f"âŒ Username `{escaped_target_username}` was not found on the checked sites ({not_found_count} sites checked)."
+            response_text += f"❌ Username `{escaped_target_username}` was not found on the checked sites ({not_found_count} sites checked)."
         else:
-            response_text += "â“ No results were parsed from the sherlock output."
+            response_text += "❓ No results were parsed from the sherlock output."
 
 
         await send_long_message(update, context, response_text, parse_mode=ParseMode.MARKDOWN_V2, disable_web_page_preview=True)
@@ -261,11 +277,12 @@ async def wpscan_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     # Do not echo the token back in plaintext or escaped.
 
     # Check/Install wpscan using the script
+    # Note: wpscan is typically a gem, the script should handle this.
     if not await check_and_install_tool('wpscan', update, context):
-        await update.message.reply_text("âŒ WPScan is required and could not be ensured installed. Cannot run command.", parse_mode=ParseMode.MARKDOWN_V2)
+        await update.message.reply_text("❌ WPScan is required and could not be ensured installed. Cannot run command.", parse_mode=ParseMode.MARKDOWN_V2)
         return
 
-    await update.message.reply_text(f"ðŸ›¡ï¸ Starting WPScan on `{escaped_url}`{escape_markdown_v2('...')} This may take some time.", parse_mode=ParseMode.MARKDOWN_V2)
+    await update.message.reply_text(f"🛡️ Starting WPScan on `{escaped_url}`{escape_markdown_v2('...')} This may take some time.", parse_mode=ParseMode.MARKDOWN_V2)
 
     # Command: wpscan --url <url> --api-token <token> --enumerate vp,vt,dbe (enumerate plugins, themes, db exports)
     # Adding common enumeration flags
@@ -284,22 +301,22 @@ async def wpscan_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                  scan_results = json.loads(output)
                  # Escape JSON string representation before putting in code block
                  escaped_json = escape_markdown_v2(json.dumps(scan_results, indent=2)[:3500])
-                 response_text = f"âœ… WPScan Results for `{escaped_url}` (JSON Output):\n```json\n{escaped_json}...\n```" # Truncate JSON
+                 response_text = f"✅ WPScan Results for `{escaped_url}` (JSON Output):\n```json\n{escaped_json}...\n```" # Truncate JSON
 
             else:
                  # Plain text output
                  escaped_output = escape_markdown_v2(output[:3500])
-                 response_text = f"âœ… WPScan Results for `{escaped_url}`:\n```\n{escaped_output}...\n```" # Truncate text
+                 response_text = f"✅ WPScan Results for `{escaped_url}`:\n```\n{escaped_output}...\n```" # Truncate text
 
             await send_long_message(update, context, response_text, parse_mode=ParseMode.MARKDOWN_V2, disable_web_page_preview=True)
 
         except json.JSONDecodeError:
             # Fallback to text if JSON parsing fails
             escaped_output = escape_markdown_v2(output[:3800])
-            response_text = f"âœ… WPScan Results for `{escaped_url}`:\n```\n{escaped_output}...\n```" # Truncate text
+            response_text = f"✅ WPScan Results for `{escaped_url}`:\n```\n{escaped_output}...\n```" # Truncate text
             await send_long_message(update, context, response_text, parse_mode=ParseMode.MARKDOWN_V2, disable_web_page_preview=True)
         except Exception as e:
-            await update.message.reply_text(f"âŒ Error processing WPScan output: {escape_markdown_v2(str(e))}", parse_mode=ParseMode.MARKDOWN_V2)
+            await update.message.reply_text(f"❌ Error processing WPScan output: {escape_markdown_v2(str(e))}", parse_mode=ParseMode.MARKDOWN_V2)
 
 
 async def searchsploit_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -312,11 +329,12 @@ async def searchsploit_command(update: Update, context: ContextTypes.DEFAULT_TYP
     escaped_keywords = escape_markdown_v2(keywords)
 
     # Check/Install searchsploit using the script
+    # Note: searchsploit is usually part of exploitdb package via apt, the script should handle this.
     if not await check_and_install_tool('searchsploit', update, context):
-         await update.message.reply_text("âŒ Searchsploit is required and could not be ensured installed. Cannot run command.", parse_mode=ParseMode.MARKDOWN_V2)
+         await update.message.reply_text("❌ Searchsploit is required and could not be ensured installed. Cannot run command.", parse_mode=ParseMode.MARKDOWN_V2)
          return
 
-    await update.message.reply_text(f"ðŸ“š Searching Exploit-DB for `{escaped_keywords}`{escape_markdown_v2('...')} This should be quick.", parse_mode=ParseMode.MARKDOWN_V2)
+    await update.message.reply_text(f"📚 Searching Exploit-DB for `{escaped_keywords}`{escape_markdown_v2('...')} This should be quick.", parse_mode=ParseMode.MARKDOWN_V2)
 
     # Command: searchsploit <keywords>
     command = ['searchsploit'] + context.args # Pass args directly for multi-word search
@@ -329,6 +347,7 @@ async def searchsploit_command(update: Update, context: ContextTypes.DEFAULT_TYP
         response_text = f"*Exploit-DB Search Results for `{escaped_keywords}`:*\n```\n{escaped_output}...\n```" # Truncate output
         await send_long_message(update, context, response_text, parse_mode=ParseMode.MARKDOWN_V2, disable_web_page_preview=True)
 
+
 # --- Conversation Handler for /login (REMOVED) ---
 # No ConversationHandler defined here anymore
 
@@ -340,4 +359,4 @@ recon_handlers = [
     CommandHandler("search", search_command),
     CommandHandler("wpscan", wpscan_command),
     CommandHandler("searchsploit", searchsploit_command),
-    ]
+                                        ]
