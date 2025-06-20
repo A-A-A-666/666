@@ -5,5 +5,6 @@ python-whois
 beautifulsoup4
 flask[async]
 hypercorn
-aiohttp
-asyncio
+sherlock # Added for /search
+aiogram # might be used 
+asyncio # used for subprocess in new handlers
