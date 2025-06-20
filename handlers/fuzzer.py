@@ -238,7 +238,11 @@ def register_handlers(application: Application):
     
     # --- Schedule the daily cleanup job ---
     job_queue = application.job_queue
-    # Run once a day at 3:00 AM bot's local time
-    job_queue.run_daily(cleanup_job, time=time(hour=3, minute=0), name="daily_cleanup")
-    
-    logger.info("Fuzzer, Upload handlers, and Cleanup Job have been registered.")
+    # **FIX APPLIED HERE**: Check if job_queue exists before using it.
+    if job_queue:
+        # Run once a day at 3:00 AM bot's local time
+        job_queue.run_daily(cleanup_job, time=time(hour=3, minute=0), name="daily_cleanup")
+        logger.info("Fuzzer, Upload handlers, and Daily Cleanup Job have been registered.")
+    else:
+        logger.warning("JobQueue not found. Daily cleanup job not scheduled. Install 'python-telegram-bot[job-queue]' to enable it.")
+        logger.info("Fuzzer and Upload handlers have been registered (without cleanup job).")
