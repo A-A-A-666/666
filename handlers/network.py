@@ -18,7 +18,6 @@ REV_IP_API_URL = "https://api.hackertarget.com/reverseiplookup/"
 
 # --- Internal Helper for /headers ---
 def _get_header_data(domain: str) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
-    """Gathers DNS and HTTP header info for a domain."""
     try:
         ipv4 = [ip.to_text() for ip in dns.resolver.resolve(domain, 'A')]
         ipv6: List[str] = []
@@ -48,11 +47,11 @@ def _get_header_data(domain: str) -> Tuple[Optional[Dict[str, Any]], Optional[st
     except Exception as e:
         return None, f"An unexpected error occurred: {e}"
 
-# --- Command Handlers ---
+# --- Command Handlers (Corrected) ---
 
 async def nmap_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not is_tool_installed('nmap'):
-        await update.message.reply_text("⚠️ Nmap is not installed on the server.", parse_mode=ParseMode.MARKDOWN_V2)
+        await update.message.reply_text(escape_markdown_v2("⚠️ Nmap is not installed on the server."), parse_mode=ParseMode.MARKDOWN_V2)
         return
     if not context.args:
         await update.message.reply_text(escape_markdown_v2("Usage: /nmap <target> [opts]\nExample: /nmap example.com -F -sV"), parse_mode=ParseMode.MARKDOWN_V2)
@@ -60,7 +59,7 @@ async def nmap_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
     target = context.args[0]
     if not re.match(r"^[a-zA-Z0-9.-]+$", target):
-        await update.message.reply_text("⚠️ Invalid target format. Only IPs and hostnames allowed.", parse_mode=ParseMode.MARKDOWN_V2)
+        await update.message.reply_text(escape_markdown_v2("⚠️ Invalid target format. Only IPs and hostnames allowed."), parse_mode=ParseMode.MARKDOWN_V2)
         return
 
     allowed_flags = ['-F', '-sV', '-sC', '-T4', '-p-', '-Pn', '-A', '-O', '-v']
@@ -69,7 +68,7 @@ async def nmap_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         await update.message.reply_text(escape_markdown_v2(f"⚠️ Disallowed flag detected. Allowed: {', '.join(allowed_flags)}"), parse_mode=ParseMode.MARKDOWN_V2)
         return
     
-    # The '...' are now handled by the escape_markdown_v2 function
+    # **FIX APPLIED HERE**: Escaped the "..."
     sent_message = await update.message.reply_text(f"Starting Nmap scan on `{escape_markdown_v2(target)}`{escape_markdown_v2('...')} This can take up to 5 minutes.", parse_mode=ParseMode.MARKDOWN_V2)
     
     command = ['nmap'] + user_flags + [target]
@@ -89,7 +88,7 @@ async def nmap_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
 async def rustscan_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not is_tool_installed('rustscan'):
-        await update.message.reply_text("⚠️ RustScan is not installed on the server.", parse_mode=ParseMode.MARKDOWN_V2)
+        await update.message.reply_text(escape_markdown_v2("⚠️ RustScan is not installed on the server."), parse_mode=ParseMode.MARKDOWN_V2)
         return
     if not context.args:
         await update.message.reply_text(escape_markdown_v2("Usage: /rustscan <target>"), parse_mode=ParseMode.MARKDOWN_V2)
@@ -97,9 +96,10 @@ async def rustscan_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
     target = context.args[0]
     if not re.match(r"^[a-zA-Z0-9.-]+$", target):
-        await update.message.reply_text("⚠️ Invalid target format.", parse_mode=ParseMode.MARKDOWN_V2)
+        await update.message.reply_text(escape_markdown_v2("⚠️ Invalid target format."), parse_mode=ParseMode.MARKDOWN_V2)
         return
         
+    # **FIX APPLIED HERE**: Escaped the "..."
     sent_message = await update.message.reply_text(f"Starting RustScan on `{escape_markdown_v2(target)}`{escape_markdown_v2('...')} This can take a moment.", parse_mode=ParseMode.MARKDOWN_V2)
     
     command = ['rustscan', '-a', target, '--ulimit', '5000', '--', '-sV']
@@ -122,6 +122,7 @@ async def lookup_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     
     domain = context.args[0].lower().strip().replace("http://", "").replace("https://", "")
     escaped_domain = escape_markdown_v2(domain)
+    # **FIX APPLIED HERE**: Escaped the "..."
     sent_message = await update.message.reply_text(f"🕵️ Digging deep into `{escaped_domain}`{escape_markdown_v2('...')}", parse_mode=ParseMode.MARKDOWN_V2)
     
     response_text = f"🔎 *Lookup Report for `{escaped_domain}`*\n" + escape_markdown_v2("----------------------------------------\n\n")
@@ -172,7 +173,8 @@ async def headers_command(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     
     domain = context.args[0].replace("http://", "").replace("https://", "").split("/")[0]
     escaped_domain = escape_markdown_v2(domain)
-    sent_message = await update.message.reply_text(f"📡 Getting headers for `{escaped_domain}`...", parse_mode=ParseMode.MARKDOWN_V2)
+    # **FIX APPLIED HERE**: Escaped the "..."
+    sent_message = await update.message.reply_text(f"📡 Getting headers for `{escaped_domain}`{escape_markdown_v2('...')}", parse_mode=ParseMode.MARKDOWN_V2)
     
     data, error = _get_header_data(domain)
     if error: await sent_message.edit_text(f"❌ Error: {escape_markdown_v2(error)}", parse_mode=ParseMode.MARKDOWN_V2); return
@@ -202,11 +204,11 @@ async def headers_command(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
                 headers_str += f"*{escape_markdown_v2(key)}:* `{escape_markdown_v2(val)}`\n"
             
             if len(response_text + headers_str) > 4000:
-                response_text += "\n\n_Full headers list is too long to display._"
+                response_text += "\n\n_Full headers list is too long to display\\._"
             else:
                 response_text += headers_str
         else:
-            response_text += "\n\n_Could not retrieve HTTP headers._"
+            response_text += "\n\n_Could not retrieve HTTP headers\\._"
 
         await sent_message.edit_text(response_text, parse_mode=ParseMode.MARKDOWN_V2, disable_web_page_preview=True)
 
@@ -216,7 +218,8 @@ async def methods_command(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     if not re.match(r"^https?://", url): url = 'https://' + url
     
     escaped_url = escape_markdown_v2(url)
-    sent_message = await update.message.reply_text(f"🔎 Checking methods for `{escaped_url}`...", parse_mode=ParseMode.MARKDOWN_V2)
+    # **FIX APPLIED HERE**: Escaped the "..."
+    sent_message = await update.message.reply_text(f"🔎 Checking methods for `{escaped_url}`{escape_markdown_v2('...')}", parse_mode=ParseMode.MARKDOWN_V2)
     
     try:
         response = requests.options(url, timeout=10, headers={'User-Agent': USER_AGENT}, allow_redirects=True)
@@ -231,7 +234,8 @@ async def revip_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     if not context.args: await update.message.reply_text(escape_markdown_v2("Usage: /revip <ip_or_domain>"), parse_mode=ParseMode.MARKDOWN_V2); return
     
     query, escaped_query = context.args[0], escape_markdown_v2(context.args[0])
-    sent_message = await update.message.reply_text(f"🌐 Performing reverse lookup on `{escaped_query}`...", parse_mode=ParseMode.MARKDOWN_V2)
+    # **FIX APPLIED HERE**: Escaped the "..."
+    sent_message = await update.message.reply_text(f"🌐 Performing reverse lookup on `{escaped_query}`{escape_markdown_v2('...')}", parse_mode=ParseMode.MARKDOWN_V2)
     
     try:
         response = requests.get(REV_IP_API_URL, params={'q': query}, headers={'User-Agent': USER_AGENT}, timeout=45)
