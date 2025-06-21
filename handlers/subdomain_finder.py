@@ -60,6 +60,7 @@ async def subdo_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
     domain = context.args[0].strip().lower()
     escaped_domain = escape_markdown_v2(domain)
+    # **FIX APPLIED HERE**: Escaped the "..." and "."
     await update.message.reply_text(f"🔍 Searching certificate logs for `{escaped_domain}`{escape_markdown_v2('...')} This can take some time{escape_markdown_v2('.')}", parse_mode=ParseMode.MARKDOWN_V2)
     
     subdomains, error = find_subdomains_crtsh(domain)
@@ -69,9 +70,8 @@ async def subdo_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         return
 
     if subdomains:
-        header = f"🧾 *Found {len(subdomains)} subdomains for `{escaped_domain}` via crt.sh:*\n"
-        # ### FIX APPLIED HERE ###
-        # Text inside a ``` code block should NOT be escaped.
+        header = f"🧾 *Found {len(subdomains)} subdomains for `{escaped_domain}` via crt\\.sh:*\n"
+        # Text inside a ``` code block does NOT need to be escaped.
         result_text = "\n".join(subdomains)
         full_message = f"{header}```\n{result_text}\n```"
         
