@@ -8,3 +8,4 @@ hypercorn
 sherlock # Added for /search
 aiogram # might be used 
 asyncio # used for subprocess in new handlers
+aiohttp
