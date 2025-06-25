@@ -37,17 +37,16 @@ async def recon_doraemon_command(update: Update, context: ContextTypes.DEFAULT_T
     tools_to_run = parse_tool_input(tool_inputs)
 
     if not tools_to_run:
-        # Using safe reply by escaping the whole string
         await update.message.reply_text(escape_markdown_v2("No valid tools or groups selected. Please check the command and try again."), parse_mode=ParseMode.MARKDOWN_V2)
         return
 
     escaped_domain = escape_markdown_v2(domain)
     escaped_tools = escape_markdown_v2(", ".join(tools_to_run))
-    # Using safe reply by escaping the ellipses '...'
     status_text = f"🔎 Running recon on `{escaped_domain}` with tools: `{escaped_tools}`{escape_markdown_v2('...')} this may take a moment\\."
     status_msg = await update.message.reply_text(status_text, parse_mode=ParseMode.MARKDOWN_V2)
 
-    full_report = [f"*Recon Report for `{escaped_domain}`*"]
+    # Replaced the emoji here
+    full_report = [f">_ *Recon Report for `{escaped_domain}`*"]
     
     async with aiohttp.ClientSession() as session:
         # Use the centralized fetch_tool function
@@ -56,13 +55,11 @@ async def recon_doraemon_command(update: Update, context: ContextTypes.DEFAULT_T
 
     for tool, result_text in results:
         # Format each section
-        # The result_text is inside a code block, so it doesn't need escaping.
         section = [
             f"\n\n*{escape_markdown_v2(f'[{tool.upper()}]')}*",
             f"```\n{result_text}\n```"
         ]
         full_report.extend(section)
     
-    # Delete the "loading" message and send the final report
     await status_msg.delete()
     await send_long_message(update, context, "\n".join(full_report), parse_mode=ParseMode.MARKDOWN_V2)
