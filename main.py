@@ -32,6 +32,7 @@ from handlers.tool_handlers import (
 from handlers.recon import recon_handlers
 # Import fuzzer handlers and job registration
 from handlers.fuzzer import register_handlers as register_fuzzer_handlers
+from handlers.recondora import recon_doraemon_command # ADDED THIS LINE
 
 
 from utils import BOT_VERSION
@@ -91,6 +92,7 @@ def main() -> None:
         CommandHandler("cms", cms_command),
         CommandHandler("nmap", nmap_command),
         CommandHandler("rustscan", rustscan_command),
+        CommandHandler("recondora", recon_doraemon_command), # ADDED THIS LINE
 
         # Data & Security handlers
         CommandHandler("breach", breach_command),
