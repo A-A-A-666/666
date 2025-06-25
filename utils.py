@@ -5,7 +5,7 @@ import shutil
 from telegram import Update
 from telegram.ext import ContextTypes
 
-BOT_VERSION = "0.667-subdo"
+BOT_VERSION = "0.668-recondora"
 
 def escape_markdown_v2(text: str) -> str:
     """Escapes string for Telegram's MarkdownV2 parser."""
@@ -59,8 +59,9 @@ def get_bot_branding() -> str:
     
     net_header = "*Network & Web Tools:*"
     net_tools = [
+        "`/recondora <domain> [tools...]` \\- Multi\\-tool recon on a domain\\.", # ADDED THIS LINE
         "`/subdo <domain>` \\- Finds subdomains for a domain\\.",
-        "`/lookup <domain>` \\- All\\-in\\-one WHOIS & DNS lookup\\."
+        "`/lookup <domain>` \\- All\\-in\\-one WHOIS & DNS lookup\\.",
         "`/cms <url>` \\- Scans a website's CMS\\."
     ]
     
