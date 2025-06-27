@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doraemon Recon Terminal</title>
+    <style>
+        :root {
+            --background-color: #0d1117;
+            --text-color: #c9d1d9;
+            --accent-color: #58a6ff;
+            --border-color: #30363d;
+            --input-bg: #010409;
+            --glow-color: rgba(88, 166, 255, 0.5);
+        }
+        body { font-family: 'Courier New', Courier, monospace; background-color: var(--background-color); color: var(--text-color); margin: 0; padding: 2rem; }
+        .container { max-width: 900px; margin: auto; background: var(--background-color); border: 1px solid var(--border-color); padding: 2rem; border-radius: 8px; box-shadow: 0 0 15px rgba(0,0,0,0.2); }
+        h1 { color: var(--accent-color); }
+        form { display: flex; flex-direction: column; gap: 20px; }
+        .input-group { display: flex; flex-direction: column; gap: 8px; }
+        label { font-weight: bold; color: #8b949e; }
+        input[type="text"] { background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-color); padding: 12px; border-radius: 6px; font-size: 16px; font-family: inherit; transition: all 0.3s ease; }
+        input[type="text"]:focus { border-color: var(--accent-color); box-shadow: 0 0 8px var(--glow-color); outline: none; }
+        .tools-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
+        .tool-item { display: flex; align-items: center; }
+        .tool-item label { cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; }
+        .tool-item input[type="checkbox"] { accent-color: var(--accent-color); }
+        .run-button { background-color: var(--accent-color); color: var(--input-bg); padding: 14px; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; font-family: inherit; transition: all 0.3s ease; }
+        .run-button:hover { box-shadow: 0 0 10px var(--glow-color); }
+        .footer { text-align: center; margin-top: 2rem; font-size: 12px; color: #4a5058; }
+        h2.section-header { color: #8b949e; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-top: 25px; margin-bottom: 15px; font-size: 1.1em; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>>_ Doraemon Recon Terminal</h1>
+        <form action="/recondora" method="GET">
+            <div class="input-group">
+                <label for="domain">Target Domain / IP:</label>
+                <input type="text" id="domain" name="domain" placeholder="example.com" required>
+            </div>
+            
+            <!-- API Tools Section -->
+            <div class="input-group">
+                <h2 class="section-header">API Scanners (HackerTarget)</h2>
+                <div class="tools-grid">
+                    {% for tool, description in tool_descriptions.items() %}
+                    <div class="tool-item">
+                        <label title="{{ description }}">
+                            <input type="checkbox" name="tools" value="{{ tool }}" {% if tool in default_tools %}checked{% endif %}> {{ tool }}
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Local Tools Section -->
+            {% if local_tools %}
+            <div class="input-group">
+                <h2 class="section-header">Local Scanners</h2>
+                <div class="tools-grid">
+                    {% for key, tool_data in local_tools.items() %}
+                    <div class="tool-item">
+                        <label title="{{ tool_data.description }}">
+                            <input type="checkbox" name="tools" value="{{ key }}"> {{ tool_data.name }}
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <button class="run-button" type="submit">Execute Scan</button>
+        </form>
+        <p class="footer">Doraemon Cyber Team</p>
+    </div>
+</body>
+  </html>
